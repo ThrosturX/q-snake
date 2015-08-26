@@ -17,7 +17,9 @@ class Game:
     _cc = 20
     _cw = 32
     _ch = 24
-    _running = True
+    running = True
+    moved = False
+    discrete = False
     direction = RIGHT
     head  =     {'x': _startx,      'y': _starty}
     coords =   [{'x': _startx,      'y': _starty},
@@ -31,6 +33,9 @@ class Game:
     def __init__(self):
         self.apple = self.getRandomLocation()
         self.fps_clock = pygame.time.Clock()
+
+    def set_discrete(self, discrete):
+        self.discrete = discrete
 
     # custom cell size
     def set_size(self, cw, ch):
@@ -61,15 +66,19 @@ class Game:
 
     def start(self):
         r = render.Renderer(self._cw * self._cc, self._ch * self._cc, self._cc)
-        while self._running:
+        while self.running:
             # process all events
-            for event in pygame.event.get():
-                self.process_event(event)
+            self.process_events()
             # move snake
             self.move_snake()
             self.update_score()
             r.render(self.get_items())
-            self.fps_clock.tick(FPS)
+            if self.discrete:
+                while not self.moved:
+                    self.process_events()
+                self.moved = False
+            else:
+                self.fps_clock.tick(FPS)
         print 'Game over. Score: {0}'.format(self.score)
         pygame.quit()
 
@@ -83,10 +92,10 @@ class Game:
         or self.coords[0]['x'] >= self._cw         \
         or self.coords[0]['y'] <= -1               \
         or self.coords[0]['y'] >= self._ch:
-            self._running = False
+            self.running = False
         for body in self.coords[1:]:
             if body['x'] == self.coords[0]['x'] and body['y'] == self.coords[0]['y']:
-                self._running = False
+                self.running = False
 
     def move_snake(self):
         direction = self.direction
@@ -99,10 +108,14 @@ class Game:
         elif direction == RIGHT:
             dest = {'x': self.coords[0]['x'] + 1, 'y': self.coords[0]['y']}
         self.coords.insert(0, dest)
+             
+    def process_events(self):
+        for event in pygame.event.get():
+            self.process_event(event)
 
     def process_event(self, event):
         d = None
-        if event.type == pygame.QUIT: quit()
+        if event.type == pygame.QUIT: self.quit()
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT and self.direction != RIGHT:
                 d = LEFT
@@ -112,14 +125,15 @@ class Game:
                 d = UP
             elif event.key == pygame.K_DOWN and self.direction != UP:
                 d = DOWN
-            elif event.key == pygame.K_ESCAPE: quit()
+            elif event.key == pygame.K_ESCAPE: self.quit()
 
             if d:
                 self.direction = d
+                self.moved = True
 
     def getRandomLocation(self):
         return {'x': random.randint(0, self._cw - 1), 'y': random.randint(0, self._ch - 1)}
 
     def quit(self):
-        self._running = False
+        self.running = False
 
