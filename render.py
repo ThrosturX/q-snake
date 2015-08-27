@@ -37,12 +37,12 @@ class Renderer:
         self._ww = ww
         self._wh = wh
 
-    def render(self, items):
+    def render(self, items, score):
         self.display.fill(BGCOLOR)
         self.draw_grid()
         self.draw_apple(items['apple']) # draw the apple first so
         self.draw_snake(items['snake']) # snake can overwrite it
-        self.draw_score(len(items['snake']) - 3) # draw the score
+        self.draw_score(score) # draw the score
         pygame.display.update()
 
     def draw_apple(self, apple):
