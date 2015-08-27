@@ -117,14 +117,17 @@ class Agent:
             index = (dirs.index(current_direction) + 1) % 4
             self.game.post(dirs[index])
 
-    def lowlevelaction(self,act):
+    def lowlevelaction(self, act):
         current_direction = self.game.direction
         dirs = ['up', 'right', 'down', 'left']
         index = (dirs.index(current_direction) + 2) % 4
-        if current_direction == dirs[index]:
-            act = random.choice('left, right')
+        print '{0}, currently going {1}'.format(act, current_direction)
+        if act == dirs[index]:
+            act = random.choice(['left', 'right'])
+            print 'turning', act
             self.action(act)
         else:
+            print 'sending', act
             self.game.post(act)
 
     def play(self):
