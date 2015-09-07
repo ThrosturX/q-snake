@@ -10,7 +10,7 @@ DOWN  = 'down'
 LEFT  = 'left'
 RIGHT = 'right'
 
-_startx = _starty = 12
+_startx = _starty = 2
 
 class Game:
     _fps_clock = None
@@ -23,6 +23,7 @@ class Game:
     direction = None
     head = None
     coords = None
+    suppressed = False
 
     apple = {'x': 0, 'y': 0}
     score = 0
@@ -92,7 +93,8 @@ class Game:
             # move snake
             self.move_snake()
             self.update_score()
-            r.render(self.get_items(), self.score)
+            if not self.suppressed:
+                r.render(self.get_items(), self.score)
             if self.discrete:
                 while not self.moved and self.running:
                     self.process_events()
