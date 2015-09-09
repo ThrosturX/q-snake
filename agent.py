@@ -4,6 +4,9 @@ import math, random
 import threading, time, traceback
 from game import Game
 
+global verbose
+verbose = 0
+
 class Q_Learn:
     current_state = None
     last_action = None
@@ -32,8 +35,8 @@ class Q_Learn:
         # d is a dictionary containing all available actions and the respective rewards for each state
         if random.random() < self.epsilon: # encourage exploration
             best = [i for i in range(len(self.acts)) if d.get(self.acts[i], 0) == max([d.get(act, 0) for act in self.acts])]
-            if args.verbose >= 2:
-                print 'exploring {0}'.format([self.acts[x] for x in best])
+#           if args.verbose >= 2:
+#               print 'exploring {0}'.format([self.acts[x] for x in best])
             return random.choice(self.acts)
         return self.simple_selection(d)
 
@@ -50,7 +53,7 @@ class Q_Learn:
                 best_actions.append(act)
         # select the best one, use random in case there are many
         selection = random.choice(best_actions)
-        if args.verbose >= 2:
+        if verbose >= 2:
             print 'selected {0} from values {1}'.format(selection, [d.get(act, 0) for act in self.acts])
         return selection
 
@@ -64,10 +67,10 @@ class Q_Learn:
         row[self.last_action] = self.calculate_reward(current_reward, value, row)
         self.Q[self.current_state] = row
         if value > 5 or value < 0:
-            if args.verbose:
+            if verbose:
                 print '{0} received a reward of {1} after action {2}'.format(self, value, self.last_action)
 #               raw_input('continue?')
-            if args.verbose >= 3:
+            if verbose >= 3:
                 pprint(self.Q)
 
     def calculate_reward(self, old, reward, d):
@@ -81,13 +84,16 @@ class Agent:
     game = None
     t = None
     score = 0
-    Q = []
+    learners = []
     prev_state = None
     prev_action = None
     pos = (0, 0)
 
     def __init__(self, game):
         self.game = game
+
+    def add_learner(self, learner):
+        self.learners.append(learner)
 
     def assess_environment(self):
         bounds = self.game.get_size()
@@ -170,10 +176,10 @@ class Agent:
         self.game.suppressed = True
         for x in xrange(100):
             print 'training session', x
-#           self.train(learner, 0)
+            self.train(learner, 0)
         for x in xrange(100):
             print 'training session', 100 + x
-#           self.train(survivor, 0)
+            self.train(survivor, 1)
 
         self.game.suppressed = False
         while True:
@@ -186,34 +192,34 @@ class Agent:
                 apple, obstacles, distance = self.assess_environment()   # use this to calculate the state... # TODO
 #               print apple, obstacles, distance
                 learner.set_state(apple)            # set the current state 
-                survivor.set_state((obstacles, apple)) # added apple
+                survivor.set_state(obstacles) 
                 eat = learner.select()              # select the 'optimal' action
 #               self.lowlevelaction(eat)
                 live = survivor.select()
-                decider.set_state((apple, live, distance))
+                decider.set_state((apple, distance))
                 act = decider.select()
-                self.lowlevelaction(live)
-#               if act == 'eat':
-#                   self.lowlevelaction(eat)
-#               elif act == 'survive':
-#                   self.lowlevelaction(live)
-#               else:
-#                   raise Exception("Invalid action: {0}".format(act))
+#               self.lowlevelaction(live)
+                if act == 'eat':
+                    self.lowlevelaction(eat)
+                elif act == 'survive':
+                    self.lowlevelaction(live)
+                else:
+                    raise Exception("Invalid action: {0}".format(act))
                 reward = self.check_reward()        # check if there's a reward
                 if reward:
-                    survivor.reward(reward)
-#                   if act == 'eat':
-#                       learner.reward(reward)
-#                   decider.reward(reward)
-#               elif act == 'survive':
-#                   survivor.reward(distance)
+#                   survivor.reward(reward)
+                    if act == 'eat':
+                        learner.reward(reward)
+                    decider.reward(reward)
+                elif act == 'survive':
+                    survivor.reward(distance)
                 while self.pos == self.game.get_head():
                     time.sleep(0.01)
                 self.pos = self.game.get_head()
             learner.reward(-50) # we lost!
             survivor.reward(-150)
             decider.reward(-50)
-            if args.verbose:
+            if verbose:
                 print 'got score', self.score
             time.sleep(0.1)
             self.reset_game()
@@ -239,6 +245,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='snake-playing Q-learning agent')
     parser.add_argument('-v', '--verbose', action='count', help='increase output verbosity')
     args = parser.parse_args()
+    verbose = args.verbose
     if args.verbose >= 3:
         from pprint import pprint
     try:
