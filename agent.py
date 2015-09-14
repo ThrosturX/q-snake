@@ -26,6 +26,10 @@ class Q_Learn:
     def select(self):
         found = self.Q.get(self.current_state, self.get_default_dict()) # try and get the 'action -> reward' dictionary, otherwise empty dictionary
         self.last_action = self.get_action(found)
+        if type(self.last_action) == int:
+            print found
+            print self.get_action(found)
+            raise Exception('digit')
         return self.last_action
 
     def set_state(self, state):
@@ -37,7 +41,7 @@ class Q_Learn:
             best = [i for i in range(len(self.acts)) if d.get(self.acts[i], 0) == max([d.get(act, 0) for act in self.acts])]
 #           if args.verbose >= 2:
 #               print 'exploring {0}'.format([self.acts[x] for x in best])
-            return random.choice(self.acts)
+            return self.acts[random.choice(best)]
         return self.simple_selection(d)
 
     def simple_selection(self, d):
@@ -106,13 +110,23 @@ class Agent:
         angle = math.atan2(dy, dx) * 1 / math.pi
         eat = int(angle * 2) # return an approximation of the direction to the apple (for now)
 #       print eat
-        du = head[1]                # distance to top
+        du = - head[1] - 1          # distance to top (negative)
         dd = bounds[1] - head[1]    # distance to bottom
-        dl = head[0]                # distance to left
+        dl = - head[0] - 1          # distance to left (negative)
         dr = bounds[0] - head[0]    # distance to right
-        walls = (min(2,du), min(2,dd), min(2,dl), min(2,dr))
+        # walls will tell what nearest wall is
+        tb = du
+        lr = dl
+        if abs(du) > dd:
+            tb = dd
+        if abs(dl) > dr:
+            lr = dr
+        walls = (tb, lr)
+        # restrict the interval to [-2, 2]
+        walls = tuple(map(lambda x: max(-2, min(x, 2)), walls))
 #       print 'E,W: ({0}, {1})'.format(eat, walls)
-        mindist = min(walls)
+        mindist = min(map(abs,walls))
+#       print eat, walls, mindist
         return eat, walls, mindist
 
     def check_reward(self): # can (AND SHOULD) be improved if game is changed
@@ -139,13 +153,14 @@ class Agent:
         dirs = ['up', 'right', 'down', 'left']
         index = (dirs.index(current_direction) + 2) % 4
 #       print '{0}, currently going {1}'.format(act, current_direction)
-        if act == dirs[index]:
+        if act == dirs[index]    and not True: # TODO: 'temporarily' disbled
             act = random.choice(['left', 'right'])
 #           print 'turning', act
             self.action(act)
         else:
 #           print 'sending', act
             self.game.post(act)
+#       print 'just sent {0} while going {1}'.format(act, current_direction)
 
     def train(self, learner, index):
         self.t = threading.Thread(target=self.game.start)

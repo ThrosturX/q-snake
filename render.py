@@ -60,7 +60,7 @@ class Renderer:
             worm_segment_rect = pygame.Rect(x, y, c, c)
             worm_segment_fill = pygame.Rect(x + 4, y + 4, c - 8, c - 8)
 
-            pygame.draw.rect(self.display, DARKGREEN, worm_segment_rect)
+            pygame.draw.rect(self.display, DARKGREEN, worm_segment_fill)
             pygame.draw.rect(self.display,     GREEN, worm_segment_rect)
 
     def draw_score(self, score):

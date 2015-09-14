@@ -70,9 +70,10 @@ class Game:
         elif action == RIGHT:
             key = pygame.K_RIGHT
         else:
-            print 'unknown action... gonna fail'
+            print 'unknown action... gonna fail.', action
             
         evt = pygame.event.Event(pygame.KEYDOWN, {'key': key})
+        self.moved = True
         pygame.event.post(evt)
 
     def get_head(self):
@@ -103,7 +104,8 @@ class Game:
                 self.fps_clock.tick(FPS)
         if self.score > self.high_score:
             self.high_score = self.score
-        print 'Game over. Score: {0}. High score: {1}.'.format(self.score, self.high_score)
+        if not self.suppressed:
+            print 'Game over. Score: {0}. High score: {1}.'.format(self.score, self.high_score)
 
     def update_score(self):
         if self.coords[0]['x'] == self.apple['x'] and self.coords[0]['y'] == self.apple['y']:
@@ -142,16 +144,18 @@ class Game:
     def process_event(self, event):
         d = None
         if event.type == pygame.QUIT: self.quit()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT and self.direction != RIGHT:
+        elif event.type == pygame.KEYDOWN:   # comments disable movement restrictions
+            if event.key == pygame.K_LEFT   :#   and self.direction != RIGHT:
                 d = LEFT
-            elif event.key == pygame.K_RIGHT and self.direction != LEFT:
+            elif event.key == pygame.K_RIGHT:#   and self.direction != LEFT:
                 d = RIGHT
-            elif event.key == pygame.K_UP and self.direction != DOWN:
+            elif event.key == pygame.K_UP   :#   and self.direction != DOWN:
                 d = UP
-            elif event.key == pygame.K_DOWN and self.direction != UP:
+            elif event.key == pygame.K_DOWN :#   and self.direction != UP:
                 d = DOWN
             elif event.key == pygame.K_ESCAPE: self.quit()
+            elif event.key == pygame.K_SPACE:
+                self.suppressed = not self.suppressed
 
             if d:
                 self.direction = d
